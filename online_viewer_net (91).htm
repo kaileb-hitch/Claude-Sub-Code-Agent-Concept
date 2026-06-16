@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Sub-Agent</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://js.puter.com/v2/"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Space+Mono:wght@405&text=0123456789&display=swap" rel="stylesheet">
+    <style>
+        .font-serif-editorial { font-family: 'Newsreader', Georgia, serif; }
+        .font-mono-data { font-family: 'Space Mono', monospace; }
+        
+        @keyframes border-flash {
+            0%, 100% { border-color: #E3D9C6; }
+            50% { border-color: #CC7A5C; }
+        }
+        .input-error-flash {
+            animation: border-flash 0.4s ease-in-out 2;
+        }
+    </style>
+</head>
+<body class="bg-[#F9F6F0] text-[#191919] min-h-screen flex flex-col font-sans selection:bg-[#EADBCC]">
+
+    <div class="bg-[#191919] text-[#F9F6F0] px-8 py-2.5 text-xs tracking-widest uppercase flex justify-between items-center font-medium">
+
+    </div>
+
+    <header class="border-b border-[#E3D9C6] bg-[#F4EFE3] px-12 py-10 max-w-7xl w-full mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div class="flex items-center gap-8 max-w-4xl">
+            <img src="https://logospng.org/download/claude/claude-1536.png" alt="Claude Logo" class="w-48 h-48 md:w-56 md:h-56 object-contain shrink-0" />
+            <div>
+                <div class="text-xs font-mono-data uppercase text-[#CC7A5C] tracking-wider mb-2"></div>
+                <h1 class="text-4xl md:text-5xl font-serif-editorial font-medium tracking-tight text-[#191919]">
+                    <span class="italic text-[#CC7A5C]">Sub-Agent</span> Mode v3
+                </h1>
+                <p class="text-base text-[#666055] mt-3 leading-relaxed font-serif-editorial">
+                    For when one is not enough
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-12 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <section class="lg:col-span-5 space-y-6">
+            <div class="bg-white border border-[#E3D9C6] p-6 rounded space-y-4 shadow-xs">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-[#191919] border-b border-[#F4EFE3] pb-2">Settings</h3>
+                <div class="space-y-1.5">
+                    <label for="main-model-select" class="text-xs font-medium text-[#4E4941]">Sub-Manager Model:</label>
+                    <select id="main-model-select" class="w-full bg-[#FAF8F5] border border-[#E3D9C6] text-[#191919] text-xs rounded p-2.5 outline-none focus:border-[#CC7A5C] font-mono-data">
+                        <option value="anthropic/claude-fable-5">Claude Fable 5 (Flagship)</option>
+                        <option value="anthropic/claude-opus-4-8" selected>Claude Opus 4.8 (Standard/Default)</option>
+                        <option value="anthropic/claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                    </select>
+                </div>
+                <div class="space-y-1.5">
+                    <label for="sub-model-select" class="text-xs font-medium text-[#4E4941]">Sub-Agent Type:</label>
+                    <select id="sub-model-select" class="w-full bg-[#FAF8F5] border border-[#E3D9C6] text-[#191919] text-xs rounded p-2.5 outline-none focus:border-[#CC7A5C] font-mono-data">
+                        <option value="auto" selected>Auto</option>
+                        <option value="manual"> Manual</option>
+                        <option value="anthropic/claude-haiku-4-5">Claude Haiku 4.5 </option>
+                        <option value="anthropic/claude-sonnet-4-6">Claude Sonnet 4.6 </option>
+                        <option value="anthropic/claude-opus-4-8">Claude Opus 4.8 </option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-[#F4EFE3] border border-[#E3D9C6] p-6 rounded space-y-4">
+                <label for="objective-input" class="text-xs font-semibold uppercase tracking-wider text-[#191919]">Send your prompt below</label>
+                <textarea id="objective-input" placeholder="Provide a comprehensive operational objective..." class="w-full h-36 bg-white border border-[#E3D9C6] rounded p-4 text-sm text-[#191919] outline-none focus:border-[#CC7A5C] resize-none transition placeholder-[#A69F92] leading-relaxed"></textarea>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-[#4E4941] font-medium">Sub-Agents used for this request:</span>
+                        <span id="concurrency-val" class="font-mono-data font-bold text-[#CC7A5C]">3 Workers</span>
+                    </div>
+                    <input type="range" id="concurrency-slider" min="2" max="5" value="3" class="w-full accent-[#CC7A5C] bg-[#E3D9C6] h-1 rounded cursor-pointer" />
+                </div>
+                <button id="deploy-btn" class="w-full bg-[#191919] hover:bg-[#CC7A5C] text-[#F9F6F0] font-medium text-xs uppercase tracking-widest py-4 px-6 rounded transition duration-200 cursor-pointer shadow-sm">send to sub-manager</button>
+            </div>
+        </section>
+
+        <section class="lg:col-span-7 space-y-6">
+            <div class="bg-white border border-[#E3D9C6] rounded">
+                <div class="border-b border-[#E3D9C6] bg-[#F4EFE3]/50 px-4 py-2 flex justify-between items-center text-xs">
+                    <span class="font-medium uppercase tracking-wider text-[#4E4941]">Claude Sub-Manager</span>
+                    <span class="text-[10px] font-mono-data text-[#888277]" id="active-orchestrator-label">The Manager for Sub-Agents</span>
+                </div>
+                <div class="bg-[#FDFBF7] border-b border-[#F4EFE3] px-4 py-2.5 text-xs text-[#888277] italic font-serif-editorial">
+                    <strong>Main Claude Agent</strong> <span id="orchestrator-thinking">Sets and controls how sub-agents will act...</span>
+                </div>
+                <div id="manager-planning-box" class="p-4 text-xs font-mono-data text-[#CC7A5C] bg-[#FAF8F5] min-h-[50px] overflow-x-auto whitespace-pre-wrap">Awaiting Messages to output, this may be because a error, or you haven't sent a message...</div>
+            </div>
+
+            <div class="bg-white border border-[#E3D9C6] rounded flex flex-col min-h-[250px]">
+                <div class="border-b border-[#E3D9C6] bg-[#F4EFE3]/50 px-4 py-2 flex justify-between items-center text-xs">
+                    <span class="font-medium uppercase tracking-wider text-[#4E4941]">Sub Agents Output</span>
+                    <span class="text-[10px] font-mono-data text-[#386641] font-bold">Threads appear here</span>
+                </div>
+                <div id="manual-intercept-banner" class="bg-[#EADBCC] border-b border-[#E3D9C6] px-4 py-3 text-xs flex justify-between items-center hidden">
+                    <span class="text-[#191919] font-medium font-serif-editorial"> <strong>Select Models per agent manually below</strong> Configure Model per Agent Settings below.</span>
+                    <button id="execute-manual-btn" class="bg-[#191919] text-white px-3 py-1 text-[11px] rounded uppercase font-medium tracking-wider hover:bg-[#CC7A5C] transition">Confirm & Launch</button>
+                </div>
+                <div id="workers-grid" class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 align-content-start bg-[#FAF8F5]">
+                    <p class="text-xs text-[#888277] italic col-span-2 text-center my-auto">Sub Agent Instances And Messages will show here...</p>
+                </div>
+            </div>
+
+            <div class="bg-white border border-[#E3D9C6] rounded">
+                <div class="border-b border-[#E3D9C6] bg-[#F4EFE3]/50 px-4 py-2 flex justify-between items-center text-xs">
+                    <span class="font-medium uppercase tracking-wider text-[#4E4941]">Conclusional Output</span>
+                    <span class="text-[10px] font-mono-data text-[#888277]">Text Output/Conclusion</span>
+                </div>
+                <div class="bg-[#FDFBF7] border-b border-[#F4EFE3] px-4 py-2.5 text-xs text-[#888277] italic font-serif-editorial">
+                    <strong>Output</strong> <span id="synthesis-thinking">Incoming Text will appear here</span>
+                </div>
+                <div id="final-synthesis-box" class="p-6 text-sm text-[#191919] leading-relaxed font-serif-editorial bg-white min-h-[100px] whitespace-pre-wrap">Awaiting output...</div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="border-t border-[#E3D9C6] bg-[#F4EFE3] text-center p-6 text-xs text-[#888277] max-w-7xl w-full mx-auto mt-12">
+       Claude Sub-Agent 2026 © 
+    </footer>
+
+    <script>
+        const objectiveInput = document.getElementById('objective-input');
+        const deployBtn = document.getElementById('deploy-btn');
+        const managerPlanningBox = document.getElementById('manager-planning-box');
+        const workersGrid = document.getElementById('workers-grid');
+        const finalSynthesisBox = document.getElementById('final-synthesis-box');
+        const concurrencySlider = document.getElementById('concurrency-slider');
+        const concurrencyVal = document.getElementById('concurrency-val');
+        
+        const mainModelSelect = document.getElementById('main-model-select');
+        const subModelSelect = document.getElementById('sub-model-select');
+        const manualInterceptBanner = document.getElementById('manual-intercept-banner');
+        const executeManualBtn = document.getElementById('execute-manual-btn');
+        
+        const orchestratorThinking = document.getElementById('orchestrator-thinking');
+        const activeOrchestratorLabel = document.getElementById('active-orchestrator-label');
+        const synthesisThinking = document.getElementById('synthesis-thinking');
+
+        let globalPlanTasks = [];
+        let globalObjective = "";
+        let globalActiveOrchestrator = "";
+
+        concurrencySlider.addEventListener('input', (e) => {
+            concurrencyVal.innerText = `${e.target.value} Workers`;
+        });
+
+        function getResponseText(responseObj) {
+            if (!responseObj) return "";
+            if (typeof responseObj === 'string') return responseObj;
+            if (responseObj.text) return responseObj.text;
+            if (responseObj.message && responseObj.message.content) {
+                const content = responseObj.message.content;
+                if (Array.isArray(content) && content[0] && content[0].text) {
+                    return content[0].text;
+                }
+                return content.toString();
+            }
+            return responseObj.toString();
+        }
+
+        function cleanAndParseJSON(rawString) {
+            let s = rawString.trim();
+            
+            if (s.startsWith("```json")) s = s.substring(7);
+            else if (s.startsWith("```")) s = s.substring(3);
+            if (s.endsWith("```")) s = s.substring(0, s.length - 3);
+            s = s.trim();
+            
+            const firstBracket = s.indexOf('[');
+            const lastBracket = s.lastIndexOf(']');
+            
+            if (firstBracket === -1 || lastBracket === -1) {
+                throw new Error("No explicit structural JSON Array detected in the Orchestrator runtime buffer response.");
+            }
+            
+            const sanitizedJSONText = s.substring(firstBracket, lastBracket + 1);
+            return JSON.parse(sanitizedJSONText);
+        }
+
+        deployBtn.addEventListener('click', async () => {
+            globalObjective = objectiveInput.value.trim();
+            if (!globalObjective) {
+                objectiveInput.classList.remove('input-error-flash');
+                void objectiveInput.offsetWidth; 
+                objectiveInput.classList.add('input-error-flash');
+                objectiveInput.focus();
+                return;
+            }
+
+            const chosenLimit = parseInt(concurrencySlider.value);
+            globalActiveOrchestrator = mainModelSelect.value;
+            const subAgentSetting = subModelSelect.value;
+            const orchestratorShortLabel = globalActiveOrchestrator.split('/').pop();
+
+            deployBtn.disabled = true;
+            deployBtn.innerText = "PARSING WORKLOAD MAP...";
+            activeOrchestratorLabel.innerText = `Manager Node [${orchestratorShortLabel}]`;
+            orchestratorThinking.innerText = `Analyzing macro components for division configuration...`;
+            managerPlanningBox.innerText = "[SYS_LOG] Ingesting parameters...";
+            workersGrid.innerHTML = "";
+            manualInterceptBanner.classList.add('hidden');
+            synthesisThinking.innerText = "Awaiting execution vectors...";
+            finalSynthesisBox.innerText = "Awaiting thread matrix synchronization...";
+
+            try {
+                const managerPrompt = `You are the primary Anthropic Sub-Agent Orchestrator Node. 
+                Deconstruct the following macro objective into an array list of independent sub-tasks. 
+                You must output exactly between 2 and ${chosenLimit} sub-tasks based on systemic scope.
+
+                You must evaluate each task independently. If the routing selection setting provided to you is "auto" OR if it is "manual", evaluate the processing complexity of each individual sub-task and autonomously assign it one of the following three hardware tags in your output based on ideal alignment:
+                - "anthropic/claude-haiku-4-5" (for direct queries, narrow analytics)
+                - "anthropic/claude-sonnet-4-6" (for balanced code assembly, multi-layered logical tracking)
+                - "anthropic/claude-opus-4-8" (for maximum abstract reasoning, structural data synthesis)
+
+                If the routing setting is anything else, it is explicitly "${subAgentSetting}". In that scenario, override decisions and assign "${subAgentSetting}" to every single task's suggestedModel property.
+                
+                CRITICAL: Return EXCLUSIVELY a parseable JSON array block matching this architectural schema. Do not frame it with introductory text:
+                [
+                    {"agentName": "Claude-Sub-1", "subTaskDescription": "Task description focus...", "suggestedModel": "model-id-here", "internalReasoningAbstract": "Short thought on allocation choice"},
+                    {"agentName": "Claude-Sub-2", "subTaskDescription": "Task description focus...", "suggestedModel": "model-id-here", "internalReasoningAbstract": "Short thought on allocation choice"}
+                ]
+                
+                Macro Objective: "${globalObjective}"`;
+
+                const managerResult = await puter.ai.chat(managerPrompt, {
+                    model: globalActiveOrchestrator
+                });
+                const managerText = getResponseText(managerResult);
+                
+                globalPlanTasks = cleanAndParseJSON(managerText);
+                managerPlanningBox.innerText = JSON.stringify(globalPlanTasks, null, 4);
+
+                if (subAgentSetting === "manual") {
+                    orchestratorThinking.innerText = `Topography configured. System paused for manual Human-In-The-Loop hardware provisioning.`;
+                    deployBtn.innerText = "Awaiting Manual Provisioning...";
+                    renderManualProvisioningCards(globalPlanTasks);
+                } else {
+                    orchestratorThinking.innerText = `Successfully deconstructed objective into ${globalPlanTasks.length} matrix slices. Initializing parallel runtimes.`;
+                    executeParallelMatrix(globalPlanTasks);
+                }
+
+            } catch (error) {
+                console.error("Discovery Loop Failure: ", error);
+                finalSynthesisBox.innerText = `⚠ System Execution Interrupted: ${error.message}\n\nRaw Buffer Yielded:\n${managerPlanningBox.innerText}`;
+                deployBtn.disabled = false;
+                deployBtn.innerText = "Deploy Sub-Agent Matrix";
+            }
+        });
+
+        function renderManualProvisioningCards(tasks) {
+            workersGrid.innerHTML = "";
+            manualInterceptBanner.classList.remove('hidden');
+
+            tasks.forEach((task, index) => {
+                const card = document.createElement('div');
+                card.className = "bg-white border border-[#CC7A5C]/40 p-4 rounded text-xs flex flex-col justify-between shadow-xs";
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center border-b border-[#F4EFE3] pb-1.5 font-mono-data">
+                            <span class="font-bold text-[#191919]">${task.agentName}</span>
+                            <span class="text-[10px] text-[#CC7A5C] tracking-widest uppercase font-semibold">AWAITING CONFIG</span>
+                        </div>
+                        <p class="text-[#888277] font-serif-editorial text-[11px]"><strong>Task:</strong> ${task.subTaskDescription}</p>
+                        <div class="space-y-1">
+                            <label class="text-[10px] uppercase font-bold text-[#888277]">Override Operational Hardware:</label>
+                            <select id="manual-select-${index}" class="w-full bg-[#FAF8F5] border border-[#E3D9C6] text-[#191919] text-[11px] rounded p-1.5 font-mono-data outline-none focus:border-[#CC7A5C]">
+                                <option value="anthropic/claude-haiku-4-5" ${task.suggestedModel.includes('haiku') ? 'selected' : ''}>Claude Haiku 4.5</option>
+                                <option value="anthropic/claude-sonnet-4-6" ${task.suggestedModel.includes('sonnet') ? 'selected' : ''}>Claude Sonnet 4.6</option>
+                                <option value="anthropic/claude-opus-4-8" ${task.suggestedModel.includes('opus') ? 'selected' : ''}>Claude Opus 4.8</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                workersGrid.appendChild(card);
+            });
+        }
+
+        executeManualBtn.addEventListener('click', () => {
+            manualInterceptBanner.classList.add('hidden');
+            const updatedTasks = globalPlanTasks.map((task, index) => {
+                const manualDropdown = document.getElementById(`manual-select-${index}`);
+                if (manualDropdown) task.suggestedModel = manualDropdown.value;
+                return task;
+            });
+            executeParallelMatrix(updatedTasks);
+        });
+
+        async function executeParallelMatrix(tasks) {
+            deployBtn.disabled = true;
+            deployBtn.innerText = `PROCESSING ${tasks.length} RUNTIMES...`;
+            workersGrid.innerHTML = "";
+
+            const workerPromises = tasks.map((task, index) => {
+                const chosenModel = task.suggestedModel || 'anthropic/claude-haiku-4-5';
+                const shortLabel = chosenModel.split('/').pop();
+
+                const card = document.createElement('div');
+                card.className = "bg-white border border-[#E3D9C6] p-4 rounded text-xs flex flex-col justify-between shadow-xs";
+                card.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center border-b border-[#F4EFE3] pb-1.5 font-mono-data">
+                            <span class="font-bold text-[#191919]">${task.agentName} [${shortLabel}]</span>
+                            <span class="text-[10px] text-[#CC7A5C] tracking-widest uppercase font-semibold animate-pulse" id="status-${index}">COMPUTING</span>
+                        </div>
+                        <div class="bg-[#FAF8F5] border border-[#E3D9C6]/60 p-2 text-[11px] text-[#888277] font-serif-editorial italic rounded">
+                            <strong>Sub-Agent Monologue:</strong> <span id="think-${index}">Initializing core operational vector rules...</span>
+                        </div>
+                        <p class="text-[#888277] font-serif-editorial text-[11px]"><strong>Assignment:</strong> ${task.subTaskDescription}</p>
+                        <div id="content-${index}" class="text-[#4E4941] max-h-36 overflow-y-auto whitespace-pre-wrap leading-relaxed pt-1">Spawning context slice...</div>
+                    </div>
+                `;
+                workersGrid.appendChild(card);
+
+                return (async () => {
+                    try {
+                        const subAgentPrompt = `You are an isolated computational sub-agent node. Complete this assignment query cleanly: "${task.subTaskDescription}" within the contextual boundaries of: "${globalObjective}". Be factual, professional, direct, and analytical.`;
+                        const response = await puter.ai.chat(subAgentPrompt, {
+                            model: chosenModel
+                        });
+                        const outputText = getResponseText(response);
+                        
+                        document.getElementById(`think-${index}`).innerText = `Task execution resolved cleanly. Packing payload string structure.`;
+                        document.getElementById(`content-${index}`).innerText = outputText;
+                        document.getElementById(`status-${index}`).innerText = "RESOLVED";
+                        document.getElementById(`status-${index}`).className = "text-[10px] text-[#386641] font-mono-data font-bold tracking-widest";
+                        
+                        return { task: task.subTaskDescription, modelUsed: shortLabel, result: outputText };
+                    } catch (err) {
+                        document.getElementById(`content-${index}`).innerText = `Execution Fault: ${err.message}`;
+                        document.getElementById(`status-${index}`).innerText = "CRITICAL_ERR";
+                        document.getElementById(`status-${index}`).className = "text-[10px] text-[#A63A50] font-mono-data font-bold tracking-widest";
+                        return { task: task.subTaskDescription, result: `Failure: ${err.message}` };
+                    }
+                })();
+            });
+
+            try {
+                const compiledWorkerPayloads = await Promise.all(workerPromises);
+
+                deployBtn.innerText = "SYNTHESIZING MATRIX RESULTS...";
+                synthesisThinking.innerText = `Ingested all ${compiledWorkerPayloads.length} independent data payloads successfully. Reconciling telemetry insights...`;
+                finalSynthesisBox.innerText = "Compiling matrix inputs into master executive report...";
+                
+                const reductionPrompt = `You are the primary Anthropic Sub-Agent Orchestrator Node. Take the compiled, parallel-processed task returns from your worker matrix and reconcile them into an elegant, comprehensive, cohesive executive discovery briefing report addressing the core macro objective. Ensure clean formatting, removing data overlaps.
+
+                Macro Objective: ${globalObjective}
+                
+                Compiled Matrix Payloads:
+                ${JSON.stringify(compiledWorkerPayloads, null, 2)}`;
+
+                const masterSummaryResult = await puter.ai.chat(reductionPrompt, {
+                    model: globalActiveOrchestrator
+                });
+                
+                synthesisThinking.innerText = `Reconciliation workflow closed out cleanly. Final presentation report polished and container populated.`;
+                finalSynthesisBox.innerText = getResponseText(masterSummaryResult);
+
+            } catch (error) {
+                console.error("Synthesis Framework Fault: ", error);
+                finalSynthesisBox.innerText = `⚠ System Execution Interrupted during synthesis: ${error.message}`;
+            } finally {
+                deployBtn.disabled = false;
+                deployBtn.innerText = "Deploy Sub-Agent Matrix";
+            }
+        }
+    </script>
+</body>
+</html>
